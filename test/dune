@@ -1,0 +1,21 @@
+(executable
+ (name roundtrip)
+ (modules roundtrip)
+ (libraries core hledger))
+
+(library
+ (name hledger_test)
+ (modules test_amount test_tag test_journal)
+ (inline_tests)
+ (libraries core hledger)
+ (preprocess
+  (pps ppx_jane)))
+
+(rule
+ (alias runtest)
+ (deps
+  conformance.sh
+  roundtrip.exe
+  (glob_files data/*.journal))
+ (action
+  (run bash %{dep:conformance.sh} ./roundtrip.exe data/edge.journal)))

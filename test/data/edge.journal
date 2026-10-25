@@ -1,0 +1,84 @@
+; top comment
+# hash comment
+* star comment
+
+comment
+anything goes here
+  even indented
+end comment
+
+decimal-mark .  ; the decimal mark used in this file
+Y 2025
+include included.journal  ; more entries
+
+account assets:bank:checking    ; type: C
+  ; acctnum: 12345
+account expenses:food  ; alias: food
+commodity $1,000.00
+commodity 1.000,00 EUR  ; alias: €
+commodity INR
+  format INR 1,00,00,000.00
+commodity 1000. AAAA
+commodity "AAAA 2023"
+payee Whole Foods
+payee ""
+tag trip
+P 2025-03-01 AAPL $179.25
+P 2025-03-02 "AAAA 2023" 1,234.5 EUR  ; price note
+alias checking = assets:bank:checking
+alias /^(.+):bank:([^:]+)/ = \1:\2
+end aliases
+apply account home
+end apply account
+D $1,000.00
+
+1/15 yearless, uses Y
+    checking  $10
+    food
+
+2025-01-16=2025-01-20 * (#42) Whole Foods | groceries  ; trip: rome, receipt:
+    ; second line of txn comment
+    * expenses:food        $12.50  ; posting comment
+      ; next line posting comment, date:2025-01-17
+    ! assets:bank:checking
+
+2025-01-17 indian
+    assets:cash      INR 9,99,99,999.00
+    assets:spaced     1 000 000.00 EUR
+    assets:quote      CHF 1'000'000.00
+    assets:under      1_000_000.00 X
+    assets:sci        1E-6 BTC
+    assets:neg1       -$1
+    assets:neg2       $-   1
+    equity:open
+
+2025-01-18 virtual
+    (budget:food)           $-10
+    [envelope:food]          $10
+    [envelope:avail]
+    expenses:food            $10
+    assets:bank:checking
+
+2025-01-19 lots
+    assets:inv:a      10 AAPL {2025-01-15, "12:05", $50}
+    assets:inv:b      5 AAPL {$51.25} @ $51.25
+    assets:inv:c      2 AAPL {{$110}} [2025-01-10] (ledger note)
+    assets:inv:d      3 AAPL @@ $150
+    assets:inv:e      1 AAPL (@) $49
+    assets:bank:checking
+
+2025-01-20 assertions
+    assets:bank:checking      $0 = $100
+    assets:bank:checking      $0 == $100
+    assets:bank:checking      $0 =* $100
+    assets:bank:checking      $0 ==* $100 @ €1
+    assets:bank:savings          = $200
+    equity:open
+
+~ monthly from 2025-01-01  rent  ; budget
+    expenses:rent   $1,000.00
+    assets:bank:checking
+
+= expenses:food
+    (liabilities:charity)   *-0.01
+    (liabilities:tax)       *$0.25

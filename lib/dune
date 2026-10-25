@@ -1,0 +1,6 @@
+(library
+ (name hledger)
+ (public_name hledger)
+ (libraries core bigdecimal)
+ (preprocess
+  (pps ppx_jane)))
