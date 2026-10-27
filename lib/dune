@@ -1,6 +1,7 @@
 (library
  (name hledger)
  (public_name hledger)
- (libraries core bigdecimal)
+ (private_modules calendar decimal_quantity)
+ (libraries base decimal ptime)
  (preprocess
-  (pps ppx_jane)))
+  (pps ppx_sexp_conv ppx_compare ppx_let)))

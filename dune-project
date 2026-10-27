@@ -19,7 +19,12 @@
  (depends
   (ocaml
    (>= 5.1))
-  core
-  bigdecimal
-  ppx_jane
+  base
+  (decimal (>= 1.0.2))
+  ptime
+  ppx_sexp_conv
+  ppx_compare
+  ppx_let
+  (stdio :with-test)
+  (ppx_sexp_value :with-test)
   (ppx_expect :with-test)))

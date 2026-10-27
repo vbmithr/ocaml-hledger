@@ -1,4 +1,5 @@
-open Core
+open Base
+module Ptime = Calendar
 
 type status =
   | Unmarked
@@ -24,7 +25,7 @@ type cost =
 (* Cost basis annotation: hledger's {DATE, "LABEL", COST}, or Ledger's {COST} or
    {{TOTAL}} with [DATE] and (LABEL) annotations. *)
 type lot =
-  { lot_date : Date.t option
+  { lot_date : Ptime.date option
   ; label : string option
   ; basis : cost option
   }
@@ -84,8 +85,8 @@ let posting
 ;;
 
 type transaction =
-  { date : Date.t
-  ; date2 : Date.t option
+  { date : Ptime.date
+  ; date2 : Ptime.date option
   ; status : status
   ; code : string option
   ; description : string (* may be PAYEE | NOTE *)
@@ -166,8 +167,8 @@ type directive =
       ; comment : comment
       }
   | Price of
-      { date : Date.t
-      ; time : Time_ns.Ofday.t option
+      { date : Ptime.date
+      ; time : Ptime.time option
       ; commodity : string
       ; price : Amount.t
       ; comment : comment

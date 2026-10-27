@@ -1,6 +1,6 @@
 (** Reading journal files. *)
 
-open Core
+open Base
 
 (** Parses the contents of one journal file. [file] names it in error messages, which
     look like ["FILE:LINE: message"].

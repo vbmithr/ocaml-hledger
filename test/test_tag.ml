@@ -1,4 +1,5 @@
-open Core
+open Base
+open Stdio
 open Hledger
 
 let show s = print_s [%sexp (Tag.of_line s : Tag.t list)]

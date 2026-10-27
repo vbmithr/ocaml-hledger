@@ -1,11 +1,11 @@
-open Core
+open Base
 open Journal
 
 (* Parse-time state that changes how later lines are read. *)
 type state =
   { mutable year : int option (* Y directive *)
   ; mutable decimal_mark : char option (* decimal-mark directive *)
-  ; commodity_marks : char String.Table.t (* from commodity and D samples *)
+  ; commodity_marks : (string, char) Hashtbl.t (* from commodity and D samples *)
   }
 
 let hint st commodity =
@@ -23,7 +23,7 @@ let error fmt = Printf.ksprintf Or_error.error_string fmt
 (* Prefixes an error with its location. *)
 let at ~file number r =
   Result.map_error r ~f:(fun e ->
-    Error.of_string (sprintf "%s:%d: %s" file number (Error.to_string_hum e)))
+    Error.of_string (Printf.sprintf "%s:%d: %s" file number (Error.to_string_hum e)))
 ;;
 
 (* Index of the first run of two or more blanks at or after [i], or the length of [s].
@@ -61,11 +61,8 @@ let parse_date ?default_year s =
   let number f = (not (String.is_empty f)) && String.for_all f ~f:Char.is_digit in
   let make y m d =
     Or_error.try_with (fun () ->
-      Date.create_exn
-        ~y:(Int.of_string y)
-        ~m:(Month.of_int_exn (Int.of_string m))
-        ~d:(Int.of_string d))
-    |> Result.map_error ~f:(fun _ -> Error.of_string (sprintf "invalid date %S" s))
+      Calendar.date_exn (Int.of_string y) (Int.of_string m) (Int.of_string d))
+    |> Result.map_error ~f:(fun _ -> Error.of_string (Printf.sprintf "invalid date %S" s))
   in
   match fields with
   | fs when not (List.for_all fs ~f:number) -> error "invalid date %S" s
@@ -412,7 +409,12 @@ let parse_transaction st ~default_year ~file header body =
       at
         header.number
         (Or_error.map
-           (scan_date ~default_year:(Date.year date) header.text (i + 1))
+           (scan_date
+              ~default_year:
+                (let year, _, _ = date in
+                 year)
+              header.text
+              (i + 1))
            ~f:(fun (d, j) -> Some d, j))
     else return (None, i)
   in
@@ -592,7 +594,7 @@ let parse_price st ~default_year rest =
       && String.contains word ':'
       && String.for_all word ~f:(fun c -> Char.is_digit c || Char.equal c ':')
     then (
-      match Or_error.try_with (fun () -> Time_ns.Ofday.of_string word) with
+      match Or_error.try_with (fun () -> Calendar.time_of_string word) with
       | Ok t -> return (Some t, skip_blanks rest stop)
       | Error _ -> error "invalid time %S" word)
     else return (None, i)
@@ -707,7 +709,7 @@ let parse_directive st ~default_year (header : line) body =
 let journal ?(file = "<input>") ?default_year contents =
   let open Or_error.Let_syntax in
   let st =
-    { year = None; decimal_mark = None; commodity_marks = String.Table.create () }
+    { year = None; decimal_mark = None; commodity_marks = Hashtbl.create (module String) }
   in
   let at number r = at ~file number r in
   let lines =

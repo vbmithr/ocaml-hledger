@@ -1,9 +1,10 @@
 (** Single-commodity amounts, with the display style they were written in.
 
-    The quantity is exact. Since [Bigdecimal] does not keep trailing zeros, the number
-    of decimal digits to show is part of the {!type-style}, as in hledger. *)
+    The quantity is an exact, finite [Decimal.t]. Display precision is kept
+    separately in {!type-style}, as in hledger. Parsing, negation and rendering
+    do not round quantities through the decimal arithmetic context. *)
 
-open Core
+open Base
 
 type side =
   | Left (** [$1] *)
@@ -29,7 +30,7 @@ type style =
 [@@deriving sexp, compare, equal]
 
 type t =
-  { quantity : Bigdecimal.t
+  { quantity : Decimal.t
   ; commodity : string (** Unquoted; [""] for the no-symbol commodity. *)
   ; style : style
   }
@@ -41,9 +42,10 @@ type t =
 val default_style : ?precision:int -> string -> style
 
 (** An amount in [commodity]. Without [style], uses {!default_style}, with [precision]
-    defaulting to the number of decimal digits [quantity] needs. Pass [~precision:2] to
-    write [$1500.00] rather than [$1500]. *)
-val create : ?style:style -> ?precision:int -> commodity:string -> Bigdecimal.t -> t
+    defaulting to [quantity]'s decimal scale, including trailing zeros.
+    Pass [~precision:2] to write [$1500.00] rather than [$1500].
+    Raises [Invalid_argument] for NaN or infinity. *)
+val create : ?style:style -> ?precision:int -> commodity:string -> Decimal.t -> t
 
 val is_zero : t -> bool
 val neg : t -> t

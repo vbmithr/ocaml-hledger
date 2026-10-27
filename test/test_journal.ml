@@ -1,4 +1,5 @@
-open Core
+open Base
+open Stdio
 open Hledger
 
 let parse s =
@@ -53,13 +54,13 @@ let%expect_test "parse a transaction" =
 ;;
 
 let%expect_test "write a transaction built in code" =
-  let usd q = Amount.create ~precision:2 ~commodity:"$" (Bigdecimal.of_string q) in
+  let usd q = Amount.create ~precision:2 ~commodity:"$" (Decimal.of_string q) in
   let t =
     Journal.transaction
       ~status:Cleared
       ~description:"Acme | invoice 17"
       ~comment:{ same_line = Some (Tag.to_text [ "client", "acme" ]); lines = [] }
-      (Date.of_string "2026-10-25")
+      (2026, 10, 25)
       [ Journal.posting "assets:receivable" ~amount:(usd "1500.00")
       ; Journal.posting "revenues:consulting"
       ]
@@ -86,12 +87,12 @@ let%expect_test "decimal-mark and commodity directives steer parsing" =
   List.iter (Journal.transactions j) ~f:(fun t ->
     List.iter t.postings ~f:(fun p ->
       match p.amount with
-      | Some (Amount a) -> print_endline (Bigdecimal.to_string_no_sn a.quantity)
+      | Some (Amount a) -> print_endline (Decimal.to_string ~format:`plain a.quantity)
       | _ -> ()));
   [%expect
     {|
     1000
-    1
+    1.000
     |}]
 ;;
 

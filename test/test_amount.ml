@@ -1,4 +1,5 @@
-open Core
+open Base
+open Stdio
 open Hledger
 
 let show ?hint s =
@@ -8,7 +9,7 @@ let show ?hint s =
     printf
       "%-18s q=%s prec=%d -> %s\n"
       s
-      (Bigdecimal.to_string_no_sn a.quantity)
+      (Decimal.to_string ~format:`plain a.quantity)
       a.style.precision
       (Amount.to_string a)
 ;;
@@ -46,17 +47,17 @@ let%expect_test "amount formats" =
     3 "green apples"   q=3 prec=0 -> 3 "green apples"
     1E-6               q=0.000001 prec=6 -> 0.000001
     EUR 1E3            q=1000 prec=0 -> EUR 1000
-    $1,000,000.00      q=1000000 prec=2 -> $1,000,000.00
-    EUR 2.000.000,00   q=2000000 prec=2 -> EUR 2.000.000,00
-    INR 9,99,99,999.00 q=99999999 prec=2 -> INR 9,99,99,999.00
-    CHF 1'000'000.00   q=1000000 prec=2 -> CHF 1'000'000.00
-    1_000_000.00       q=1000000 prec=2 -> 1_000_000.00
-    1 000 000.00       q=1000000 prec=2 -> 1 000 000.00
+    $1,000,000.00      q=1000000.00 prec=2 -> $1,000,000.00
+    EUR 2.000.000,00   q=2000000.00 prec=2 -> EUR 2.000.000,00
+    INR 9,99,99,999.00 q=99999999.00 prec=2 -> INR 9,99,99,999.00
+    CHF 1'000'000.00   q=1000000.00 prec=2 -> CHF 1'000'000.00
+    1_000_000.00       q=1000000.00 prec=2 -> 1_000_000.00
+    1 000 000.00       q=1000000.00 prec=2 -> 1 000 000.00
     1 000.5 €       q=1000.5 prec=1 -> 1 000.5 €
     10.                q=10 prec=0 -> 10
     1,000.             q=1000 prec=0 -> 1,000.
     .5 X               q=0.5 prec=1 -> 0.5 X
-    €12,50           q=12.5 prec=2 -> €12,50
+    €12,50           q=12.50 prec=2 -> €12,50
     |}]
 ;;
 
@@ -71,8 +72,8 @@ let%expect_test "ambiguous numbers" =
   show "1,000.00,5";
   [%expect
     {|
-    1,000              q=1 prec=3 -> 1,000
-    1.000              q=1 prec=3 -> 1.000
+    1,000              q=1.000 prec=3 -> 1,000
+    1.000              q=1.000 prec=3 -> 1.000
     1,000              q=1000 prec=0 -> 1,000.
     1.000              q=1000 prec=0 -> 1.000,
     error: number does not match decimal mark ","
@@ -82,11 +83,11 @@ let%expect_test "ambiguous numbers" =
 ;;
 
 let%expect_test "building amounts" =
-  let a = Amount.create ~commodity:"$" (Bigdecimal.of_string "-12.5") in
+  let a = Amount.create ~commodity:"$" (Decimal.of_string "-12.5") in
   print_endline (Amount.to_string a);
   print_endline (Amount.to_string { a with style = { a.style with precision = 2 } });
-  print_endline (Amount.to_string (Amount.create ~commodity:"EUR" (Bigdecimal.of_int 3)));
-  print_endline (Amount.to_string (Amount.create ~commodity:"AAAA 2023" Bigdecimal.one));
+  print_endline (Amount.to_string (Amount.create ~commodity:"EUR" (Decimal.of_int 3)));
+  print_endline (Amount.to_string (Amount.create ~commodity:"AAAA 2023" Decimal.one));
   [%expect
     {|
     $-12.5

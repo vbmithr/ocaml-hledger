@@ -1,4 +1,4 @@
-open Core
+open Base
 
 type t = string * string [@@deriving sexp, compare, equal]
 
@@ -51,9 +51,10 @@ let to_text tags =
       String.is_empty name
       || String.exists name ~f:(fun c ->
         is_blank c || Char.equal c ':' || Char.equal c '\n')
-    then invalid_argf "Hledger.Tag.to_text: invalid tag name %S" name ();
+    then Printf.invalid_argf "Hledger.Tag.to_text: invalid tag name %S" name ();
     if String.exists value ~f:(fun c -> Char.equal c ',' || Char.equal c '\n')
-    then invalid_argf "Hledger.Tag.to_text: invalid value %S for tag %s" value name ());
+    then
+      Printf.invalid_argf "Hledger.Tag.to_text: invalid value %S for tag %s" value name ());
   List.map tags ~f:(fun (n, v) -> if String.is_empty v then n ^ ":" else n ^ ": " ^ v)
   |> String.concat ~sep:", "
 ;;

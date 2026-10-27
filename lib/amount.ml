@@ -1,4 +1,5 @@
-open Core
+open Base
+module Decimal = Decimal_quantity
 
 type side =
   | Left
@@ -24,14 +25,17 @@ type style =
 [@@deriving sexp, compare, equal]
 
 type t =
-  { quantity : Bigdecimal.t
+  { quantity : Decimal.t
   ; commodity : string
   ; style : style
   }
 [@@deriving sexp, compare, equal]
 
 (* Number of decimal digits needed to write [q] exactly. *)
-let scale q = Int.max 0 (-Bigdecimal.exponent q)
+let scale q =
+  let _, _, exponent = Decimal.to_tuple q in
+  Int.max 0 (-exponent)
+;;
 
 (* Length in bytes of the UTF-8 sequence starting with byte [c]. *)
 let utf8_len c =
@@ -54,9 +58,10 @@ let default_style ?(precision = 0) commodity =
   { side; spaced; decimal_mark = '.'; digit_groups = None; precision }
 ;;
 
-(* Bigdecimal does not keep trailing zeros, so give [precision] to show $1500.00 rather
-   than $1500. It defaults to the digits [quantity] needs. *)
+(* Display precision is separate from the decimal value so that journal styles
+   survive parsing. Newly constructed amounts default to the decimal's scale. *)
 let create ?style ?precision ~commodity quantity =
+  let quantity = Decimal.finite_exn quantity in
   let style =
     match style with
     | Some s -> s
@@ -68,8 +73,8 @@ let create ?style ?precision ~commodity quantity =
   { quantity; commodity; style }
 ;;
 
-let is_zero t = Bigdecimal.is_zero t.quantity
-let neg t = { t with quantity = Bigdecimal.neg t.quantity }
+let is_zero t = Decimal.equal t.quantity Decimal.zero
+let neg t = { t with quantity = Decimal.copy_negate t.quantity }
 
 (* Characters allowed in an unquoted commodity symbol: hledger's
    isNonsimpleCommodityChar, negated. *)
@@ -108,8 +113,8 @@ let group_integer_part digits = function
    never dropped: an amount more precise than its style is shown in full. *)
 let format_number ?(force_decimal_mark = false) style q =
   let int_part, frac =
-    match String.lsplit2 (Bigdecimal.to_string_no_sn (Bigdecimal.abs q)) ~on:'.' with
-    | None -> Bigdecimal.to_string_no_sn (Bigdecimal.abs q), ""
+    match String.lsplit2 (Decimal.to_plain_string (Decimal.copy_abs q)) ~on:'.' with
+    | None -> Decimal.to_plain_string (Decimal.copy_abs q), ""
     | Some (i, f) -> i, f
   in
   let frac =
@@ -133,7 +138,12 @@ let format_number ?(force_decimal_mark = false) style q =
 (* [force_decimal_mark] always writes a decimal mark, as commodity directive samples
    need: "1000." rather than "1000". *)
 let to_string ?force_decimal_mark { quantity; commodity; style } =
-  let sign = if Sign.equal (Bigdecimal.sign quantity) Neg then "-" else "" in
+  let quantity = Decimal.finite_exn quantity in
+  let sign =
+    if Decimal.sign quantity < 0 && not (Decimal.equal quantity Decimal.zero)
+    then "-"
+    else ""
+  in
   let number = format_number ?force_decimal_mark style quantity in
   let symbol = format_commodity commodity in
   let space = if style.spaced && not (String.is_empty symbol) then " " else "" in
@@ -229,7 +239,7 @@ let scan_raw_number s i =
 ;;
 
 type number =
-  { value : Bigdecimal.t
+  { value : Decimal.t
   ; mark : char option
   ; groups : digit_groups option
   ; decimals : int
@@ -286,9 +296,7 @@ let interpret_number ~hint { runs; seps; exponent } =
   let digits = String.concat int_runs ^ frac in
   let digits = if String.is_empty digits then "0" else digits in
   let value =
-    Bigdecimal.scale_by
-      (Bigdecimal.of_string digits)
-      ~power_of_ten:(exponent - String.length frac)
+    Decimal.of_string (digits ^ "e" ^ Int.to_string (exponent - String.length frac))
   in
   return
     { value
@@ -328,7 +336,7 @@ let make ~hint ~negative ~commodity ~side ~spaced raw stop =
     | Some d, _ | None, Some d -> d
     | None, None -> '.'
   in
-  let quantity = if negative then Bigdecimal.neg num.value else num.value in
+  let quantity = if negative then Decimal.copy_negate num.value else num.value in
   let style =
     { side; spaced; decimal_mark; digit_groups = num.groups; precision = num.decimals }
   in

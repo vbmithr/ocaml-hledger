@@ -1,9 +1,9 @@
-open Core
+open Base
 open Journal
 
 (* Display width of UTF-8 text, counting code points. *)
 let width s = String.count s ~f:(fun c -> Char.to_int c land 0xc0 <> 0x80)
-let date = Date.to_string
+let date = Calendar.date_to_string
 
 let status_mark = function
   | Unmarked -> ""
@@ -165,10 +165,10 @@ let directive_lines = function
   | Tag { name; comment } -> with_comment ("tag " ^ name) comment
   | Price { date = d; time; commodity; price; comment } ->
     let time =
-      Option.value_map time ~default:"" ~f:(fun t -> " " ^ Time_ns.Ofday.to_sec_string t)
+      Option.value_map time ~default:"" ~f:(fun t -> " " ^ Calendar.time_to_string t)
     in
     with_comment
-      (sprintf
+      (Printf.sprintf
          "P %s%s %s %s"
          (date d)
          time

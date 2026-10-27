@@ -8,7 +8,7 @@
     not inferred, transactions not balanced and balance assertions not checked. Period
     expressions and auto posting queries are kept as written. *)
 
-open Core
+open Base
 
 type status =
   | Unmarked
@@ -37,7 +37,7 @@ type cost =
     [{{TOTAL}}] with [[DATE]] and [(LABEL)]. A per-unit basis is written in hledger's
     syntax, a total one in Ledger's, the only syntax that has it. *)
 type lot =
-  { lot_date : Date.t option
+  { lot_date : Ptime.date option
   ; label : string option
   ; basis : cost option
   }
@@ -91,8 +91,8 @@ val posting
   -> posting
 
 type transaction =
-  { date : Date.t
-  ; date2 : Date.t option (** deprecated secondary date, [DATE=DATE2] *)
+  { date : Ptime.date (** [(year, month, day)], without an invented timestamp. *)
+  ; date2 : Ptime.date option (** deprecated secondary date, [DATE=DATE2] *)
   ; status : status
   ; code : string option (** [(CODE)] *)
   ; description : string (** may be [PAYEE | NOTE]; see {!payee_and_note} *)
@@ -102,12 +102,12 @@ type transaction =
 [@@deriving sexp, compare, equal]
 
 val transaction
-  :  ?date2:Date.t
+  :  ?date2:Ptime.date
   -> ?status:status
   -> ?code:string
   -> ?description:string
   -> ?comment:comment
-  -> Date.t
+  -> Ptime.date
   -> posting list
   -> transaction
 
@@ -169,8 +169,10 @@ type directive =
       ; comment : comment
       }
   | Price of
-      { date : Date.t
-      ; time : Time_ns.Ofday.t option
+      { date : Ptime.date
+      ; time : Ptime.time option
+        (** [((hour, minute, second), 0)]; journal price times have no timezone
+            suffix, so the offset must be zero. Seconds are integral. *)
       ; commodity : string
       ; price : Amount.t
       ; comment : comment

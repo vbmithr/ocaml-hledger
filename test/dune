@@ -1,15 +1,15 @@
 (executable
  (name roundtrip)
  (modules roundtrip)
- (libraries core hledger))
+ (libraries base stdio unix hledger))
 
 (library
  (name hledger_test)
- (modules test_amount test_tag test_journal)
+ (modules test_amount test_tag test_journal test_dependencies)
  (inline_tests)
- (libraries core hledger)
+ (libraries base stdio decimal hledger)
  (preprocess
-  (pps ppx_jane)))
+  (pps ppx_sexp_conv ppx_compare ppx_let ppx_sexp_value ppx_expect)))
 
 (rule
  (alias runtest)
